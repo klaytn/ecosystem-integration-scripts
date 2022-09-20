@@ -1,3 +1,4 @@
+![Klaytn x ChainSafe](https://user-images.githubusercontent.com/105277604/191377285-41108f9b-f90e-452d-9611-4407a434e5eb.png)
 # Unity SDK Integration
 
 ## Overview
@@ -7,15 +8,15 @@ You can get the official documentation of the ChainSafe SDK here: https://docs.g
 
 #### Key features
 
-1. Installation
-2. Before you start
-3. Create a new Unity project
-4. Custom Call on Ethereum (Ropsten)
-5. Custom Call
-6. Custom Interaction with Login
-7. Deploy KIP7 token
-8. Deploy KIP17 token
-9. Deploy KIP37 token
+1. [Installation](#installation)
+2. [Before you start](#before-you-start)
+3. [Create a new Unity project](#create-a-new-unity-project)
+4. [Custom Call on Ethereum (Ropsten)](#custom-call-on-ethereum-ropsten)
+5. [Custom Call](#custom-call)
+6. [Custom Interaction with Login](#custom-interaction-with-login)
+7. [How to use the KIP7 token](#how-to-use-the-kip7-token)
+8. [Deploy KIP17 token](#how-to-use-the-kip17-token)
+9. [Deploy KIP37 token](#how-to-use-the-kip37-token)
 
 ## Installation
 
@@ -28,8 +29,14 @@ You can get the official documentation of the ChainSafe SDK here: https://docs.g
 
 #### ChainSafe SDK
 - Go to the ChainSafe Gaming SDK from their GitHub repository called **web3.unity** at https://github.com/chainsafe 
-- Click on the latest release 
+
+![image](https://user-images.githubusercontent.com/105277604/191378458-51831d3b-44e3-4742-a050-88e002a392ab.png)
+
+- Select the latest release 
 - Click on **web3.unitypackage** to download the package
+
+![image](https://user-images.githubusercontent.com/105277604/191378522-b1064824-481b-4549-a76b-9939ed6fd519.png)
+
 
 #### Unity Hub
 - Go to https://unity3d.com/fr/get-unity/download
@@ -40,6 +47,10 @@ You can get the official documentation of the ChainSafe SDK here: https://docs.g
 - click on **Activate New License**
 - select **Unity Personal**
 - select **I don't use Unity in a professional capacity**
+
+![image](https://user-images.githubusercontent.com/105277604/191378571-828c5204-c828-4488-8128-2cc529eddcf9.png)
+![image](https://user-images.githubusercontent.com/105277604/191378583-4b87b233-7674-408e-b6cf-e2e6ca495d02.png)
+
 
 ## Before you start
 To get started, here are some details you should consider while reading the documentation. 
@@ -102,6 +113,8 @@ After downloading the package you will need to import it into your project.
 The steps for importing this package are as follows: 
 
 <p>Window -> Package Manager -> My Assets -> JSON.NET For Unity -> Import <p>
+ ![image](https://user-images.githubusercontent.com/105277604/191378677-ae9bff07-833d-42b4-bd63-9379c9517b02.png)
+
 
 ---
 
@@ -109,12 +122,21 @@ The steps for importing this package are as follows:
 The SDK / Unity plugin supports all Unity project types. In this example, we will create an empty 3D project.
 
 To create a new project, open **Unity Hub**, select **All templates**, we will use a 3D template, then click on **Create project**.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191378718-091865ae-3e01-4d83-afca-9a59d0ce995f.png)
+
 
 - Now, you have created a new project. Then we need to import the SDK into our project
 
 - Drag the downloaded web3.unitypackage file in the Installation section into the Unity project
+ 
+![image](https://user-images.githubusercontent.com/105277604/191378742-fbe55f53-6200-45a9-8e9a-72f64dc510b3.png)
+
 
 - Depending on the version of Unity you are using, you might see the error in the screen below. If it’s the case, please refer to the [Solving the Newtonsoft Error](#solving-the-newtonsoft-error) section to solve it.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191378761-1242d767-1a82-432c-a180-83cf5ea3a483.png)
+
 
 ---
 
@@ -150,7 +172,13 @@ contract AddTotal {
 #### Create your C# script on Unity
 - Click on **Web3Unity** package → **Prefabs** → **EVM** → **Custom Call**
 - Drag the **CustomCall** prefab into the scene
+ 
+![image](https://user-images.githubusercontent.com/105277604/191378851-68c19fd9-39b0-45a1-895b-f16ff1dd8363.png)
+
 - Double-click on the **CustomCallExample** script to open it on VSCode
+
+![image](https://user-images.githubusercontent.com/105277604/191379048-b06dd23e-08fc-4b4d-9197-bfa8865b99c1.png)
+
 - Complete the script below with the ABI of your contract
 
 ```C#
@@ -199,6 +227,9 @@ public class CustomCallExample : MonoBehaviour
 
 - Open the console to see the result. The console will display the number you retrieve from the contract.
 
+![image](https://user-images.githubusercontent.com/105277604/191379100-3a03440a-82b5-4f5c-b2aa-5971827bbf95.png)
+
+
 ---
 
 ## Custom Call
@@ -215,8 +246,14 @@ Make sure to install all dependencies to fix all bugs.
 - Click on **Web3Unity** package → **Prefabs** → **EVM** → **Custom Call**
 
 - Drag the **CustomCall** prefab into the scene.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379157-feb77136-358f-4180-8386-7b61225c214f.png)
+
 
 - Double-click on the **CustomCallExample** script to open it on VSCode
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379172-bbc65d69-fbe1-40b3-9219-7f89f2732fdd.png)
+
 
 - Use the script below or modify it
 
@@ -254,6 +291,9 @@ Set the window.web3ChainId to **8217** (Klaytn mainnet)
 - Open the console to see the result
 
 - The console shows the balance of the given contract on Klaytn mainnet.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379194-9bb9a2a4-5c95-4443-9350-7f24b6e1b95a.png)
+
 
 ---
 
@@ -268,17 +308,27 @@ Make sure to install all dependencies to fix all bugs.
 #### Use the WebLogin prefab to enable web3 wallet connection
 
 Under **Assets** → **Web3Unity** → **Scenes**, double-click on **WebLogin**. This is the prefab used to connect a wallet in a WebGL project.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379289-d3ee8fb5-d871-43ef-8477-11ccb9e0c9ac.png)
 
 - Go to **File** → **Build Settings** → **WebG**L → **Switch Platform**
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379314-314636b9-c730-45a2-80cf-6108235b8586.png)
+
 
 - From the same window, click on **Add Open Scenes** (top right) to add the Login scene as the first scene to appear when we run the project.
 
 - From the same window, click on **Player Settings** → **Player** → **Resolution and Presentation**, under **WebGL Template**, select the one with the same as our Unity version (WebGL 2020 for our case).
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379335-b8082420-fc3e-46ac-aa97-29096e25cb60.png)
 
 - Go back to the Unity project. Under **Assets**, select **Scenes** and double-click on **SampleScene** to use it as our second scene (FYI the first one is the login scene)
 
 - Go to **File** → **Build Settings** → **Add Open Scenes**. The SampleScene will appear under the WebLogin scene. It means the SampleScene, where we will create the buttons to read and write to the contract, will be the next scene after the WebLogin.
 :warning: Make sure the WebLogin scene is at the top because the order matters.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379361-9ae0d72d-8888-49e9-85f3-477a6adad202.png)
+
 
 #### Create your contract
 - Open Remix IDE, install the Klaytn Remix plugin then paste the code below:
@@ -304,8 +354,12 @@ contract Storage {
 
 #### Create your C# script on Unity
 - Under **Project** window, right-click on **Scenes**, click on **Create** → **C# Script**
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379397-733eecd1-c329-44ea-8b9f-23fc3a37e715.png)
 
-- Rename it (here we’ll use the name “CallABI”) ​
+- Rename it (here we’ll use the name “CallABI”)
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379430-b8c49086-2c6d-4a25-8535-34924379582a.png)
 
 - Double-click on the script to open it. Complete the script with the information below 
 
@@ -375,6 +429,8 @@ public class CustomCallABIExample : MonoBehaviour
 
 #### Create the buttons
 - Right-click on the scene, click on UI → Button and rename it to AddValue and RetrieveValue
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379461-0bf06078-cf18-491f-ab6f-a64175f669c5.png)
 
 To interact with the buttons:
 
@@ -383,25 +439,37 @@ To interact with the buttons:
 2. Drag the CallABI script into the right window
 
 3. Add an **On Click()** function by clicking on the :heavy_plus_sign: button
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379499-d45aba81-8acf-4025-a3b4-669ecd9caabf.png)
 
 4. Drag the **AddValue** button from Hierarchy window into the On Click() function
 
 5. Click on **No Function** → **CallABI** → **AddValue()**
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379515-10051c34-35f0-4468-be24-30a1b92a97bf.png)
 
 - For the RetrieveValue button, redo the steps from step 1 to step 5 above, but instead of selecting AddValue, select **RetrieveValue**
 
 Edit the network chainID under **Assets** → **WebGLTemplates** → **Web3GL-2020x** → **network.js**.
-Set the ```window.web3ChainId``` to ```1001``` .
+Set the ```window.web3ChainId``` to ```1001```.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379560-97ad1a8c-e7c1-4740-aeb6-5caa5a5ba736.png)
 
 To test the **Retrieve Value** function, click on play :arrow_forward: and click on Retrieve Value
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379579-1b46a094-521d-4246-9e06-fa7162d5f2fe.png)
 
 - To test the Add Value function , click **File** → **Build and Run**. You will have a new window in the browser that will show you the login interface
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379595-34c8600e-1aa2-4589-9ae8-894a3c32d942.png)
 
 - Click on **Login** to connect to Metamask
 
 - Click on **Add Value** to add the value of 10 to the contract
 
 - Confirm your transaction on Metamask and voilà ! Your transaction is sent to the network.
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379628-9a56762c-292a-44f6-9386-d423edb25a38.png)
 
 ---
 
@@ -415,12 +483,18 @@ Make sure to install all dependencies to fix all bugs.
 
 #### Use the WebLogin prefab to enable web3 wallet connection
 - Under **Assets** → **Web3Unity** → **Scenes**, double-click on **WebLogin**. This is the prefab used to connect a wallet in a WebGL project
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379663-1dd13fff-2edd-4b69-a1d3-d6784df92418.png)
 
 - Go to **File** → **Build Settings** → **WebGL** → **Switch Platform**
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379685-b33a8eed-a596-4284-a027-8eb0c628b97c.png)
 
 - From the same window, click on **Add Open Scenes** (top right) to add the Login scene as the first scene to appear when we run the project.
 
 - From the same window, click on **Player Settings** → **Player** → **Resolution and Presentation**, under **WebGL Template**, select the one with the same as our Unity version (WebGL 2020 for our case).
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379708-543ca706-e546-4ec5-b62c-de1f05622150.png)
 
 - Go back to the Unity project. Under Assets, select Scenes and double-click on SampleScene to use it as our second scene (FYI the first one is the login scene)
 
@@ -655,19 +729,31 @@ public class ERC20CUSTOM : MonoBehaviour
 - To create the buttons, follow the steps in the section [Custom Interaction with Login](#custom-interaction-with-login).
 
 - Your UI should look like this:
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379734-d3480fcf-62d0-4c5f-8bf1-1ffe873102be.png)
 
 - Link each button the the corresponding function in the contract. E.g here, we linked the button “Name” to the function “Name()” in the script, which calls the function “name()” in the contract
+ 
+ ![image](https://user-images.githubusercontent.com/105277604/191379749-7ea48fa4-a92b-4ad4-a062-6cc5566d12f1.png)
 
 - Change the chainId of the network in the WebGL Templates folder to ```1001``` to connect to baobab testnet
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379771-b92c2cc9-1923-495d-8edb-84e1e2831a19.png)
 
 - Click on :arrow_forward: to run the program and test the Name, Total Supply and BalanceOf buttons
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379785-4f323e77-af78-48fc-8887-e129cb3eb115.png)
 
 #### Test the Transfer and the Mint function
 - To test the **Transfer**, we need to build and run the project. So go to **File** → **Build and Run**
 
 - Click on Login to connect Metamask
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379812-8b478955-2169-4fce-8d2b-48e395087784.png)
 
 - Once connected, click on Transfer to execute the KIP7 token transfer
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379833-0a304c00-c6c2-42d9-bd37-777dc051d305.png)
 
 Here are the details of the transaction on [Klaytnscope](https://baobab.scope.klaytn.com/tx/0x1b9c6c4a21fa2bfd5e304c647908e26e0f0c4d5fed8d727bce1d586cca2afab1?tabId=eventLog)
 
@@ -685,12 +771,18 @@ Make sure to install all dependencies to fix all bugs.
 
 #### Use the WebLogin prefab to enable web3 wallet connection
 - Under **Assets** → **Web3Unity** → **Scenes**, double-click on **WebLogin**. This is the prefab used to connect a wallet in a WebGL project
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379875-e7e18524-dab1-4946-bca8-74b4baa355b9.png)
 
 - Go to **File** → **Build Settings** → **WebGL** → **Switch Platform**
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379892-41cfc013-a399-4d27-a968-92f518986c98.png)
 
 - From the same window, click on **Add Open Scenes** (top right) to add the Login scene as the first scene to appear when we run the project.
 
 - From the same window, click on **Player Settings** → **Player** → **Resolution and Presentation**, under **WebGL Template**, select the one with the same as our Unity version (WebGL 2020 for our case).
+ 
+![image](https://user-images.githubusercontent.com/105277604/191379914-5df677fc-dc1a-4246-9242-bb31d8664c18.png)
 
 - Go back to the Unity project. Under Assets, select Scenes and double-click on SampleScene to use it as our second scene (FYI the first one is the login scene)
 
@@ -871,8 +963,12 @@ To create the buttons, follow the steps in the section [Custom Interaction with 
 - Click on **Login** to connect Metamask
 
 - Click on **Mint** and confirm your transaction
+ 
+ ![image](https://user-images.githubusercontent.com/105277604/191380058-277a3686-cbbf-49d1-8ff4-e3846ed74bf6.png)
 
 - Here are the details of the transaction on [Klaytnscope](https://baobab.scope.klaytn.com/tx/0xa7adfe56dd7892679adb385e42ee22f969d8672668c3cc5d4c1baf8ee63cb98c?tabId=eventLog).
+ 
+ ![image](https://user-images.githubusercontent.com/105277604/191380090-ec373d63-dea3-4123-b3e7-2a3bd5cd6273.png)
 
 ---
 
@@ -886,12 +982,18 @@ Make sure to install all dependencies to fix all bugs.
 
 #### Use the WebLogin prefab to enable web3 wallet connection
 - Under **Assets** → **Web3Unity** → **Scenes**, double-click on **WebLogin**. This is the prefab used to connect a wallet in a WebGL project
+ 
+![image](https://user-images.githubusercontent.com/105277604/191380183-89acdf17-7a8b-4ee0-a29e-87ce4c50814e.png)
 
 - Go to **File** → **Build Settings** → **WebGL** → **Switch Platform**
+ 
+![image](https://user-images.githubusercontent.com/105277604/191380207-9c38c68e-d477-4359-8666-124f331fc2ac.png)
 
 - From the same window, click on **Add Open Scenes** (top right) to add the Login scene as the first scene to appear when we run the project.
 
 - From the same window, click on **Player Settings** → **Player** → **Resolution and Presentation**, under **WebGL Template**, select the one with the same as our Unity version (WebGL 2020 for our case).
+ 
+![image](https://user-images.githubusercontent.com/105277604/191380223-34d6b73c-3da3-4f6d-8364-42de13dd1b4c.png)
 
 - Go back to the Unity project. Under Assets, select Scenes and double-click on SampleScene to use it as our second scene (FYI the first one is the login scene)
 
@@ -1005,6 +1107,8 @@ We will create 2 buttons (*Balance*, *Mint*) on the UI to interact with our KIP3
 Click on :arrow_forward: to run the program and test the Balance button
 
 You should get a result from the Owner and the Id of the token that we put in the script
+ 
+![image](https://user-images.githubusercontent.com/105277604/191380242-e5c72903-4787-43d5-a145-8b1ab5e4c1b2.png)
 
 ### Build and Run the project to test the mint method
 Go to **File** → **Build and Run**
