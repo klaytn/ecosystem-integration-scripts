@@ -71,11 +71,11 @@ Chain ID = **8217**
 RPC URL = https://api.baobab.klaytn.net:8651/
 Chain ID = **1001**
 
-ABI formatting
+#### ABI formatting
 The ABI has a special formatting. Replace the ```"``` with ```\"``` , otherwise it will not be recognise by the SDK.
 
 Example:
->string abi = "[ { \"inputs\": [ { \"internalType\": \"uint8\", \"name\": \"_myArg\", \"type\": \"uint8\" } ], \"name\": \"addTotal\", \"outputs\": [], \"stateMutability\": \"nonpayable\", \"type\": \"function\" }, { \"inputs\": [], \"name\": \"myTotal\", \"outputs\": [ { \"internalType\": \"uint256\", \"name\": \"\", \"type\": \"uint256\" } ], \"stateMutability\": \"view\", \"type\": \"function\" } ]";
+>string abi = "[ { \\"inputs\\": [ { \\"internalType\\": \\"uint8\\", \\"name\\": \\"_myArg\\", \\"type\\": \\"uint8\\" } ], \\"name\\": \\"addTotal\\", \\"outputs\\": [], \\"stateMutability\\": \\"nonpayable\\", \\"type\\": \\"function\\" }, { \\"inputs\\": [], \\"name\\": \\"myTotal\\", \\"outputs\\": [ { \\"internalType\\": \\"uint256\\", \\"name\\": \\"\\", \\"type\\": \\"uint256\\" } ], \\"stateMutability\\": \\"view\\", \\"type\\": \\"function\\" } ]";
 
 #### Solving *System.ComponentModel.Win32Exception Error*
 You may encounter this error: *System.ComponentModel.Win32Exception (2): No such file or directory while building the project if you are using macOS.*
