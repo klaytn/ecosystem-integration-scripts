@@ -11,12 +11,11 @@ You can get the official documentation of the ChainSafe SDK here: https://docs.g
 1. [Installation](#installation)
 2. [Before you start](#before-you-start)
 3. [Create a new Unity project](#create-a-new-unity-project)
-4. [Custom Call on Ethereum (Ropsten)](#custom-call-on-ethereum-ropsten)
-5. [Custom Call](#custom-call)
-6. [Custom Interaction with Login](#custom-interaction-with-login)
-7. [How to use the KIP7 token](#how-to-use-the-kip7-token)
-8. [How to use the KIP17 token](#how-to-use-the-kip17-token)
-9. [How to use the KIP37 token](#how-to-use-the-kip37-token)
+4. [Custom Call](#custom-call)
+5. [Custom Interaction with Login](#custom-interaction-with-login)
+6. [How to use the KIP7 token](#how-to-use-the-kip7-token)
+7. [How to use the KIP17 token](#how-to-use-the-kip17-token)
+8. [How to use the KIP37 token](#how-to-use-the-kip37-token)
 
 ## Installation
 
@@ -113,8 +112,8 @@ After downloading the package you will need to import it into your project.
 The steps for importing this package are as follows: 
 
 <p>Window -> Package Manager -> My Assets -> JSON.NET For Unity -> Import <p>
- ![image](https://user-images.githubusercontent.com/105277604/191378677-ae9bff07-833d-42b4-bd63-9379c9517b02.png)
-
+ 
+ ![image](https://user-images.githubusercontent.com/105277604/191454930-9ba9554e-5dbf-404b-918b-06dd756d9082.png)
 
 ---
 
@@ -136,99 +135,6 @@ To create a new project, open **Unity Hub**, select **All templates**, we will u
 - Depending on the version of Unity you are using, you might see the error in the screen below. If it’s the case, please refer to the [Solving the Newtonsoft Error](#solving-the-newtonsoft-error) section to solve it.
  
 ![image](https://user-images.githubusercontent.com/105277604/191378761-1242d767-1a82-432c-a180-83cf5ea3a483.png)
-
-
----
-
-## Custom Call on Ethereum (Ropsten)
-
-In Unity we can use a Prefab, a pre-configured reusable GameObjects. A Prefab is like a template where we can use all its components, and property values. In this section you will see how to use a Prefab to execute a custom call on Ropsten.
-
-Start by creating a new project by following the steps at the section [Create a new Unity project](#create-a-new-unity-project).
-
-Make sure to install all dependencies to fix all bugs.
-
-#### Create your contract
-
-- Open [Remix IDE](https://remix.ethereum.org/#optimize=false&runs=200&evmVersion=null), then paste the code below:
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract AddTotal {
-    uint256 public myTotal = 0;
-
-    function addTotal(uint8 _myArg) public {
-        myTotal = myTotal + _myArg;
-    }
-}
-```
-
-- Compile your contract
-- Deploy it on Ropsten using Remix
-- Run the addTotal function and add a number in the parameter (e.g 10).
-
-#### Create your C# script on Unity
-- Click on **Web3Unity** package → **Prefabs** → **EVM** → **Custom Call**
-- Drag the **CustomCall** prefab into the scene
- 
-![image](https://user-images.githubusercontent.com/105277604/191378851-68c19fd9-39b0-45a1-895b-f16ff1dd8363.png)
-
-- Double-click on the **CustomCallExample** script to open it on VSCode
-
-![image](https://user-images.githubusercontent.com/105277604/191379048-b06dd23e-08fc-4b4d-9197-bfa8865b99c1.png)
-
-- Complete the script below with the ABI of your contract
-
-```C#
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class CustomCallExample : MonoBehaviour
-{
-    async void Start()
-    {
-        /*
-        // SPDX-License-Identifier: MIT
-        pragma solidity ^0.8.0;
-
-        contract AddTotal {
-            uint256 public myTotal = 0;
-
-            function addTotal(uint8 _myArg) public {
-                myTotal = myTotal + _myArg;
-            }
-        }
-        */
-        // set chain: ethereum, moonbeam, polygon etc
-        string chain = "ethereum";
-        // set network mainnet, testnet
-        string network = "ropsten";
-        // smart contract method to call
-        string method = "myTotal";
-        // abi in json format
-        string abi = "[ { \"inputs\": [ { \"internalType\": \"uint8\", \"name\": \"_myArg\", \"type\": \"uint8\" } ], \"name\": \"addTotal\", \"outputs\": [], \"stateMutability\": \"nonpayable\", \"type\": \"function\" }, { \"inputs\": [], \"name\": \"myTotal\", \"outputs\": [ { \"internalType\": \"uint256\", \"name\": \"\", \"type\": \"uint256\" } ], \"stateMutability\": \"view\", \"type\": \"function\" } ]";
-        // address of contract
-        string contract = "0xBd71D128642D28126b04D17ca08657041C7EEB72";
-        // array of arguments for contract
-        string args = "[]";
-        // connects to user's browser wallet to call a transaction
-        string response = await EVM.Call(chain, network, contract, abi, method, args);
-        // display response in game
-        print(response);
-    }
-}
-
-```
-
-- Run the script by clicking on the :arrow_forward: button above the scene
-
-- Open the console to see the result. The console will display the number you retrieve from the contract.
-
-![image](https://user-images.githubusercontent.com/105277604/191379100-3a03440a-82b5-4f5c-b2aa-5971827bbf95.png)
-
 
 ---
 
