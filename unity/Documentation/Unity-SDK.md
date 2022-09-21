@@ -15,16 +15,16 @@ You can get the official documentation of the ChainSafe SDK here: https://docs.g
 5. [Custom Call](#custom-call)
 6. [Custom Interaction with Login](#custom-interaction-with-login)
 7. [How to use the KIP7 token](#how-to-use-the-kip7-token)
-8. [Deploy KIP17 token](#how-to-use-the-kip17-token)
-9. [Deploy KIP37 token](#how-to-use-the-kip37-token)
+8. [How to use the KIP17 token](#how-to-use-the-kip17-token)
+9. [How to use the KIP37 token](#how-to-use-the-kip37-token)
 
 ## Installation
 
 #### Developer Environment
 
-[VS Code](https://code.visualstudio.com/Download) 
-[Metamask](https://metamask.io/download/) 
-[Unity Hub and Unity](https://www.educademy.co.uk/how-to-install-unityhub-unity-and-visual-studio-on-windows) 
+- [VS Code](https://code.visualstudio.com/Download) 
+- [Metamask](https://metamask.io/download/) 
+- [Unity Hub and Unity](https://www.educademy.co.uk/how-to-install-unityhub-unity-and-visual-studio-on-windows) 
 
 
 #### ChainSafe SDK
