@@ -1,0 +1,3 @@
+[submodule "wyvern-v3"]
+	path = wyvern-v3
+	url = https://github.com/tantely-klaytn/wyvern-v3.git
