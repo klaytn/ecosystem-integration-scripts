@@ -4,13 +4,13 @@ const WyvernAtomicizer = artifacts.require('WyvernAtomicizer')
 const WyvernExchange = artifacts.require('WyvernExchange')
 const WyvernStatic = artifacts.require('WyvernStatic')
 const WyvernRegistry = artifacts.require('WyvernRegistry')
-const TestERC20 = artifacts.require('TestKIP7.sol')
-const TestERC721 = artifacts.require('TestKIP17.sol')
+const TestKIP7 = artifacts.require('TestKIP7.sol')
+const TestKIP17 = artifacts.require('TestKIP17.sol')
 const TestERC1271 = artifacts.require('TestERC1271')
 const TestSmartContractWallet = artifacts.require('TestSmartContractWallet')
 
 const Web3 = require('web3')
-const provider = new Web3.providers.HttpProvider('http://localhost:8547')
+const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider)
 
 const { wrap,hashOrder,ZERO_BYTES32,randomUint,NULL_SIG,assertIsRejected} = require('./util')
@@ -20,60 +20,60 @@ contract('WyvernExchange', (accounts) => {
 
   const withContracts = async () =>
     {
-    let [exchange,statici,registry,atomicizer,erc20,erc721,erc1271,smartContractWallet] = await deploy(
-      [WyvernExchange,WyvernStatic,WyvernRegistry,WyvernAtomicizer,TestERC20,TestERC721,TestERC1271,TestSmartContractWallet])
-    return {exchange:wrap(exchange),statici,registry,atomicizer,erc20,erc721,erc1271,smartContractWallet}
+    let [exchange,statici,registry,atomicizer,kip7,kip17,erc1271,smartContractWallet] = await deploy(
+      [WyvernExchange,WyvernStatic,WyvernRegistry,WyvernAtomicizer,TestKIP7,TestKIP17,TestERC1271,TestSmartContractWallet])
+    return {exchange:wrap(exchange),statici,registry,atomicizer,kip7,kip17,erc1271,smartContractWallet}
     }
 
   // Returns an array of two NFTs, one to give and one to get
   const withAsymmetricalTokens = async () => {
-    let {erc721} = await withContracts()
+    let {kip17} = await withContracts()
     let nfts = [4,5]
-    await Promise.all([erc721.mint(accounts[0], nfts[0]),erc721.mint(accounts[6], nfts[1])])
-    return {nfts,erc721}
+    await Promise.all([kip17.mint(accounts[0], nfts[0]),kip17.mint(accounts[6], nfts[1])])
+    return {nfts,kip17}
   }
 
   const withAsymmetricalTokens2 = async () => {
-    let {erc721} = await withContracts()
+    let {kip17} = await withContracts()
     let nfts = [6,7]
-    await Promise.all([erc721.mint(accounts[0], nfts[0]),erc721.mint(accounts[6], nfts[1])])
-    return {nfts,erc721}
+    await Promise.all([kip17.mint(accounts[0], nfts[0]),kip17.mint(accounts[6], nfts[1])])
+    return {nfts,kip17}
   }
 
   const withSomeTokens = async () => {
-    let {erc20, erc721} = await withContracts()
+    let {kip7, kip17} = await withContracts()
     const amount = randomUint() + 2
-    await erc20.mint(accounts[0],amount)
-    return {tokens: amount, nfts: [1, 2, 3], erc20, erc721}
+    await kip7.mint(accounts[0],amount)
+    return {tokens: amount, nfts: [1, 2, 3], kip7, kip17}
   }
 
   const withTokens = async () => {
-    let {erc20} = await withContracts()
+    let {kip7} = await withContracts()
     const amount = randomUint() + 2
-    await Promise.all([erc20.mint(accounts[0], amount),erc20.mint(accounts[6], amount)])
-    return {erc20}
+    await Promise.all([kip7.mint(accounts[0], amount),kip7.mint(accounts[6], amount)])
+    return {kip7}
   }
 
   it('allows proxy transfer approval',async () => {
-    let {registry,erc20,erc721} = await withContracts()
+    let {registry,kip7,kip17} = await withContracts()
     await registry.registerProxy({from: accounts[0]})
     let proxy = await registry.proxies(accounts[0])
     assert.isTrue(proxy.length > 0,'No proxy address')
-    assert.isOk(await erc20.approve(proxy, 100000))
-    assert.isOk(await erc721.setApprovalForAll(proxy, true))
+    assert.isOk(await kip7.approve(proxy, 100000))
+    assert.isOk(await kip17.setApprovalForAll(proxy, true))
   })
 
   it('allows proxy registration',async () => {
-    let {registry, erc20, erc721} = await withContracts()
+    let {registry, kip7, kip17} = await withContracts()
     await registry.registerProxy({from: accounts[6]})
     let proxy = await registry.proxies(accounts[6])
     assert.isTrue(proxy.length > 0,'No proxy address')
-    assert.isOk(await erc20.approve(proxy, 100000, {from: accounts[6]}))
-    assert.isOk(await erc721.setApprovalForAll(proxy, true, {from: accounts[6]}))
+    assert.isOk(await kip7.approve(proxy, 100000, {from: accounts[6]}))
+    assert.isOk(await kip17.setApprovalForAll(proxy, true, {from: accounts[6]}))
   })
 
   it('allows proxy registration, erc1271',async () => {
-    let {registry, erc20, erc721, erc1271} = await withContracts()
+    let {registry, kip7, kip17, erc1271} = await withContracts()
     await registry.registerProxyFor(erc1271.address)
     let proxy = await registry.proxies(erc1271.address)
     assert.isTrue(proxy.length > 0,'No proxy address')
@@ -196,112 +196,112 @@ contract('WyvernExchange', (accounts) => {
 
   it('matches nft-nft swap order',async () => {
     let {atomicizer, exchange, registry, statici} = await withContracts()
-    let {nfts, erc721} = await withAsymmetricalTokens()
-    const erc721c = new web3.eth.Contract(erc721.abi, erc721.address)
+    let {nfts, kip17} = await withAsymmetricalTokens()
+    const kip17c = new web3.eth.Contract(kip17.abi, kip17.address)
     const selector = web3.eth.abi.encodeFunctionSignature('swapOneForOneERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
     const paramsOne = web3.eth.abi.encodeParameters(
       ['address[2]', 'uint256[2]'],
-      [[erc721.address, erc721.address], [nfts[0], nfts[1]]]
+      [[kip17.address, kip17.address], [nfts[0], nfts[1]]]
     )
     const paramsTwo = web3.eth.abi.encodeParameters(
       ['address[2]', 'uint256[2]'],
-      [[erc721.address, erc721.address], [nfts[1], nfts[0]]]
+      [[kip17.address, kip17.address], [nfts[1], nfts[0]]]
     )
     const one = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsOne, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '2'}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsTwo, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '3'}
 
-    const firstData = erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
-    const secondData = erc721c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
+    const firstData = kip17c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
+    const secondData = kip17c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
 
-    const firstCall = {target: erc721.address, howToCall: 0, data: firstData}
-    const secondCall = {target: erc721.address, howToCall: 0, data: secondData}
+    const firstCall = {target: kip17.address, howToCall: 0, data: firstData}
+    const secondCall = {target: kip17.address, howToCall: 0, data: secondData}
     const sigOne = NULL_SIG
     
     let sigTwo = await exchange.sign(two, accounts[6])
     await exchange.atomicMatch(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32)
-    assert.equal(await erc721.ownerOf(nfts[0]), accounts[6], 'Incorrect owner')
+    assert.equal(await kip17.ownerOf(nfts[0]), accounts[6], 'Incorrect owner')
   })
 
   it('matches nft-nft swap order, abi-decoding instead',async () => {
     let {atomicizer, exchange, registry, statici} = await withContracts()
-    let {nfts, erc721} = await withAsymmetricalTokens2()
-    const erc721c = new web3.eth.Contract(erc721.abi, erc721.address)
+    let {nfts, kip17} = await withAsymmetricalTokens2()
+    const kip17c = new web3.eth.Contract(kip17.abi, kip17.address)
     const selector = web3.eth.abi.encodeFunctionSignature('swapOneForOneERC721Decoding(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
     const paramsOne = web3.eth.abi.encodeParameters(
       ['address[2]', 'uint256[2]'],
-      [[erc721.address, erc721.address], [nfts[0], nfts[1]]]
+      [[kip17.address, kip17.address], [nfts[0], nfts[1]]]
     )
     const paramsTwo = web3.eth.abi.encodeParameters(
       ['address[2]', 'uint256[2]'],
-      [[erc721.address, erc721.address], [nfts[1], nfts[0]]]
+      [[kip17.address, kip17.address], [nfts[1], nfts[0]]]
     )
 
     const one = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsOne, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '333123'}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsTwo, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '123344'}
 
-    const firstData = erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
-    const secondData = erc721c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
+    const firstData = kip17c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
+    const secondData = kip17c.methods.transferFrom(accounts[6], accounts[0], nfts[1]).encodeABI()
 
-    const firstCall = {target: erc721.address, howToCall: 0, data: firstData}
-    const secondCall = {target: erc721.address, howToCall: 0, data: secondData}
+    const firstCall = {target: kip17.address, howToCall: 0, data: firstData}
+    const secondCall = {target: kip17.address, howToCall: 0, data: secondData}
     const sigOne = NULL_SIG
     
     let sigTwo = await exchange.sign(two, accounts[6])
     await exchange.atomicMatch(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32)
-    assert.equal(await erc721.ownerOf(nfts[0]), accounts[6], 'Incorrect owner')
+    assert.equal(await kip17.ownerOf(nfts[0]), accounts[6], 'Incorrect owner')
   })
 
-  it('matches two nft + erc20 orders',async () => {
-    let {atomicizer, exchange, registry, statici, erc20, erc721} = await withContracts()
+  it('matches two nft + kip7 orders',async () => {
+    let {atomicizer, exchange, registry, statici, kip7, kip17} = await withContracts()
     let {tokens, nfts} = await withSomeTokens()
     const abi = [{'constant': false, 'inputs': [{'name': 'addrs', 'type': 'address[]'}, {'name': 'values', 'type': 'uint256[]'}, {'name': 'calldataLengths', 'type': 'uint256[]'}, {'name': 'calldatas', 'type': 'bytes'}], 'name': 'atomicize', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}]
     const atomicizerc = new web3.eth.Contract(abi, atomicizer.address)
-    const erc20c = new web3.eth.Contract(erc20.abi, erc20.address)
-    const erc721c = new web3.eth.Contract(erc721.abi, erc721.address)
+    const kip7c = new web3.eth.Contract(kip7.abi, kip7.address)
+    const kip17c = new web3.eth.Contract(kip17.abi, kip17.address)
     const selector = web3.eth.abi.encodeFunctionSignature('any(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
     const one = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '2'}
     const two = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selector, staticExtradata: '0x', maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '3'}
     const sig = NULL_SIG
     
-    const firstERC20Call = erc20c.methods.transferFrom(accounts[0], accounts[6], 2).encodeABI()
-    const firstERC721Call = erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
+    const firstKIP7Call = kip7c.methods.transferFrom(accounts[0], accounts[6], 2).encodeABI()
+    const firstKIP17Call = kip17c.methods.transferFrom(accounts[0], accounts[6], nfts[0]).encodeABI()
     const firstData = atomicizerc.methods.atomicize(
-      [erc20.address, erc721.address],
+      [kip7.address, kip17.address],
       [0, 0],
-      [(firstERC20Call.length - 2) / 2, (firstERC721Call.length - 2) / 2],
-      firstERC20Call + firstERC721Call.slice(2)
+      [(firstKIP7Call.length - 2) / 2, (firstKIP17Call.length - 2) / 2],
+      firstKIP7Call + firstKIP17Call.slice(2)
     ).encodeABI()
     
-    const secondERC20Call = erc20c.methods.transferFrom(accounts[0], accounts[2], 2).encodeABI()
-    const secondERC721Call = erc721c.methods.transferFrom(accounts[0], accounts[2], nfts[1]).encodeABI()
+    const secondKIP7Call = kip7c.methods.transferFrom(accounts[0], accounts[2], 2).encodeABI()
+    const secondKIP17Call = kip17c.methods.transferFrom(accounts[0], accounts[2], nfts[1]).encodeABI()
     const secondData = atomicizerc.methods.atomicize(
-      [erc721.address, erc20.address],
+      [kip17.address, kip7.address],
       [0, 0],
-      [(secondERC721Call.length - 2) / 2, (secondERC20Call.length - 2) / 2],
-      secondERC721Call + secondERC20Call.slice(2)
+      [(secondKIP17Call.length - 2) / 2, (secondKIP7Call.length - 2) / 2],
+      secondKIP17Call + secondKIP7Call.slice(2)
     ).encodeABI()
     
     const firstCall = {target: atomicizer.address, howToCall: 1, data: firstData}
     const secondCall = {target: atomicizer.address, howToCall: 1, data: secondData}
     
     await exchange.atomicMatch(one, sig, firstCall, two, sig, secondCall, ZERO_BYTES32)
-    assert.equal(await erc20.balanceOf(accounts[6]), 2, 'Incorrect balance')
+    assert.equal(await kip7.balanceOf(accounts[6]), 2, 'Incorrect balance')
   })
 
-  it('matches two nft + erc20 orders, real static call',async () => {
-    let {atomicizer, exchange, registry, statici, erc20, erc721} = await withContracts()
+  it('matches two nft + kip7 orders, real static call',async () => {
+    let {atomicizer, exchange, registry, statici, kip7, kip17} = await withContracts()
     let {tokens, nfts} = await withSomeTokens()
     const abi = [{'constant': false, 'inputs': [{'name': 'addrs', 'type': 'address[]'}, {'name': 'values', 'type': 'uint256[]'}, {'name': 'calldataLengths', 'type': 'uint256[]'}, {'name': 'calldatas', 'type': 'bytes'}], 'name': 'atomicize', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}]
     const atomicizerc = new web3.eth.Contract(abi, atomicizer.address)
-    const erc20c = new web3.eth.Contract(erc20.abi, erc20.address)
-    const erc721c = new web3.eth.Contract(erc721.abi, erc721.address)
+    const kip7c = new web3.eth.Contract(kip7.abi, kip7.address)
+    const kip17c = new web3.eth.Contract(kip17.abi, kip17.address)
     const selectorOne = web3.eth.abi.encodeFunctionSignature('split(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
     const selectorOneA = web3.eth.abi.encodeFunctionSignature('sequenceExact(bytes,address[7],uint8,uint256[6],bytes)')
     const selectorOneB = web3.eth.abi.encodeFunctionSignature('sequenceExact(bytes,address[7],uint8,uint256[6],bytes)')
     const firstEDSelector = web3.eth.abi.encodeFunctionSignature('transferERC20Exact(bytes,address[7],uint8,uint256[6],bytes)')
-    const firstEDParams = web3.eth.abi.encodeParameters(['address', 'uint256'], [erc20.address, '2'])
+    const firstEDParams = web3.eth.abi.encodeParameters(['address', 'uint256'], [kip7.address, '2'])
     const secondEDSelector = web3.eth.abi.encodeFunctionSignature('transferERC721Exact(bytes,address[7],uint8,uint256[6],bytes)')
-    const secondEDParams = web3.eth.abi.encodeParameters(['address', 'uint256'], [erc721.address, nfts[2]])
+    const secondEDParams = web3.eth.abi.encodeParameters(['address', 'uint256'], [kip17.address, nfts[2]])
     const extradataOneA = web3.eth.abi.encodeParameters(
       ['address[]', 'uint256[]', 'bytes4[]', 'bytes'],
       [[statici.address, statici.address],
@@ -309,7 +309,7 @@ contract('WyvernExchange', (accounts) => {
         [firstEDSelector, secondEDSelector],
         firstEDParams + secondEDParams.slice(2)]
     )
-    const bEDParams = web3.eth.abi.encodeParameters(['address', 'uint256'], [erc721.address, nfts[0]])
+    const bEDParams = web3.eth.abi.encodeParameters(['address', 'uint256'], [kip17.address, nfts[0]])
     const bEDSelector = web3.eth.abi.encodeFunctionSignature('transferERC721Exact(bytes,address[7],uint8,uint256[6],bytes)')
     const extradataOneB = web3.eth.abi.encodeParameters(
       ['address[]', 'uint256[]', 'bytes4[]', 'bytes'],
@@ -327,21 +327,21 @@ contract('WyvernExchange', (accounts) => {
     const one = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: extradataOne, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '3352'}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: extradataTwo, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '3335'}
     const sig = NULL_SIG
-    const firstERC20Call = erc20c.methods.transferFrom(accounts[0], accounts[6], 2).encodeABI()
-    const firstERC721Call = erc721c.methods.transferFrom(accounts[0], accounts[6], nfts[2]).encodeABI()
+    const firstKIP7Call = kip7c.methods.transferFrom(accounts[0], accounts[6], 2).encodeABI()
+    const firstKIP17Call = kip17c.methods.transferFrom(accounts[0], accounts[6], nfts[2]).encodeABI()
     const firstData = atomicizerc.methods.atomicize(
-      [erc20.address, erc721.address],
+      [kip7.address, kip17.address],
       [0, 0],
-      [(firstERC20Call.length - 2) / 2, (firstERC721Call.length - 2) / 2],
-      firstERC20Call + firstERC721Call.slice(2)
+      [(firstKIP7Call.length - 2) / 2, (firstKIP17Call.length - 2) / 2],
+      firstKIP7Call + firstKIP17Call.slice(2)
     ).encodeABI()
     
-    const secondERC721Call = erc721c.methods.transferFrom(accounts[6], accounts[0], nfts[0]).encodeABI()
+    const secondKIP17Call = kip17c.methods.transferFrom(accounts[6], accounts[0], nfts[0]).encodeABI()
     const secondData = atomicizerc.methods.atomicize(
-      [erc721.address],
+      [kip17.address],
       [0],
-      [(secondERC721Call.length - 2) / 2],
-      secondERC721Call
+      [(secondKIP17Call.length - 2) / 2],
+      secondKIP17Call
     ).encodeABI()
     
     const firstCall = {target: atomicizer.address, howToCall: 1, data: firstData}
@@ -349,32 +349,32 @@ contract('WyvernExchange', (accounts) => {
     
     let twoSig = await exchange.sign(two, accounts[6])
     await exchange.atomicMatch(one, sig, firstCall, two, twoSig, secondCall, ZERO_BYTES32)
-    assert.equal(await erc20.balanceOf(accounts[6]), 4, 'Incorrect balance')
+    assert.equal(await kip7.balanceOf(accounts[6]), 4, 'Incorrect balance')
   })
 
-  it('matches erc20-erc20 swap order',async () => {
+  it('matches kip7-kip7 swap order',async () => {
     let {atomicizer, exchange, registry, statici} = await withContracts()
-    let {erc20} = await withTokens()    
-    const erc20c = new web3.eth.Contract(erc20.abi, erc20.address)
+    let {kip7} = await withTokens()    
+    const kip7c = new web3.eth.Contract(kip7.abi, kip7.address)
 
     const selector = web3.eth.abi.encodeFunctionSignature('swapExact(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
     const paramsOne = web3.eth.abi.encodeParameters(
       ['address[2]', 'uint256[2]'],
-      [[erc20.address, erc20.address], ['1', '2']]
+      [[kip7.address, kip7.address], ['1', '2']]
     )
     const paramsTwo = web3.eth.abi.encodeParameters(
       ['address[2]', 'uint256[2]'],
-      [[erc20.address, erc20.address], ['2', '1']]
+      [[kip7.address, kip7.address], ['2', '1']]
     )
 
     const one = {registry: registry.address, maker: accounts[0], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsOne, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '412312'}
     const two = {registry: registry.address, maker: accounts[6], staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsTwo, maximumFill: '1', listingTime: '0', expirationTime: '10000000000', salt: '4434'}
 
-    const firstData = erc20c.methods.transferFrom(accounts[0], accounts[6], 1).encodeABI()
-    const secondData = erc20c.methods.transferFrom(accounts[6], accounts[0], 2).encodeABI()
+    const firstData = kip7c.methods.transferFrom(accounts[0], accounts[6], 1).encodeABI()
+    const secondData = kip7c.methods.transferFrom(accounts[6], accounts[0], 2).encodeABI()
 
-    const firstCall = {target: erc20.address, howToCall: 0, data: firstData}
-    const secondCall = {target: erc20.address, howToCall: 0, data: secondData}
+    const firstCall = {target: kip7.address, howToCall: 0, data: firstData}
+    const secondCall = {target: kip7.address, howToCall: 0, data: secondData}
     const sigOne = NULL_SIG
     
     let sigTwo = await exchange.sign(two, accounts[6])
@@ -560,12 +560,12 @@ contract('WyvernExchange', (accounts) => {
   })
 
   it('allows proxy registration for smart contract',async () => {
-    let {registry, erc721, smartContractWallet} = await withContracts()
+    let {registry, kip17, smartContractWallet} = await withContracts()
     // this registration carries over to the following test and is necessary for the value exchange.
     await smartContractWallet.registerProxy(registry.address, {from: accounts[6]})
     let proxy = await registry.proxies(smartContractWallet.address)
     assert.isTrue(proxy.length > 0,'No proxy address')
-    assert.isOk(await smartContractWallet.setApprovalForAll(proxy, erc721.address, true, {from: accounts[6]}))
+    assert.isOk(await smartContractWallet.setApprovalForAll(proxy, kip17.address, true, {from: accounts[6]}))
   })
 
   it('should match with approvals and value to contract',async () => {

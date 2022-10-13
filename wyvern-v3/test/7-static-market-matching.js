@@ -4,15 +4,12 @@ const WyvernAtomicizer = artifacts.require('WyvernAtomicizer')
 const WyvernExchange = artifacts.require('WyvernExchange')
 const StaticMarket = artifacts.require('StaticMarket')
 const WyvernRegistry = artifacts.require('WyvernRegistry')
-const TestERC20 = artifacts.require('TestKIP7')
-const TestERC721 = artifacts.require('TestKIP17')
-const TestERC1155 = artifacts.require('TestKIP37')
-// const TestERC20 = artifacts.require('TestERC20')
-// const TestERC721 = artifacts.require('TestERC721')
-// const TestERC1155 = artifacts.require('TestERC1155')
+const TestKIP7 = artifacts.require('TestKIP7')
+const TestKIP17 = artifacts.require('TestKIP17')
+const TestKIP37 = artifacts.require('TestKIP37')
 
 const Web3 = require('web3')
-const provider = new Web3.providers.HttpProvider('http://localhost:8547')
+const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider)
 
 const {wrap,ZERO_BYTES32,CHAIN_ID,assertIsRejected} = require('./util')
@@ -29,7 +26,7 @@ contract('WyvernExchange', (accounts) =>
 
 	let deploy = async contracts => Promise.all(contracts.map(contract => contract.new()))
 
-	const any_erc1155_for_erc20_test = async (options) =>
+	const any_erc1155_for_kip7_test = async (options) =>
 		{
 		const {tokenId,
 			buyTokenId,
@@ -40,7 +37,7 @@ contract('WyvernExchange', (accounts) =>
 			buyAmount,
 			buyingDenominator,
 			erc1155MintAmount,
-			erc20MintAmount,
+			kip7MintAmount,
 			account_a,
 			account_b,
 			sender,
@@ -49,7 +46,7 @@ contract('WyvernExchange', (accounts) =>
 		const txCount = transactions || 1
 		
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20,erc1155] = await deploy([TestERC20,TestERC1155])
+		let [kip7,erc1155] = await deploy([TestKIP7,TestKIP37])
 		
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
@@ -59,35 +56,35 @@ contract('WyvernExchange', (accounts) =>
 		let proxy2 = await registry.proxies(account_b)
 		assert.equal(true, proxy2.length > 0, 'no proxy address for account b')
 		
-		await Promise.all([erc1155.setApprovalForAll(proxy1,true,{from: account_a}),erc20.approve(proxy2,erc20MintAmount,{from: account_b})])
-		await Promise.all([erc1155.mint(account_a,tokenId,erc1155MintAmount),erc20.mint(account_b,erc20MintAmount)])
+		await Promise.all([erc1155.setApprovalForAll(proxy1,true,{from: account_a}),kip7.approve(proxy2,kip7MintAmount,{from: account_b})])
+		await Promise.all([erc1155.mint(account_a,tokenId,erc1155MintAmount),kip7.mint(account_b,kip7MintAmount)])
 
 		if (buyTokenId)
 			await erc1155.mint(account_a,buyTokenId,erc1155MintAmount)
 
 		const erc1155c = new web3.eth.Contract(erc1155.abi, erc1155.address)
-		const erc20c = new web3.eth.Contract(erc20.abi, erc20.address)
+		const kip7c = new web3.eth.Contract(kip7.abi, kip7.address)
 		const selectorOne = web3.eth.abi.encodeFunctionSignature('anyERC1155ForERC20(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
 		const selectorTwo = web3.eth.abi.encodeFunctionSignature('anyERC20ForERC1155(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
 			
 		const paramsOne = web3.eth.abi.encodeParameters(
 			['address[2]', 'uint256[3]'],
-			[[erc1155.address, erc20.address], [tokenId, sellingNumerator || 1, sellingPrice]]
+			[[erc1155.address, kip7.address], [tokenId, sellingNumerator || 1, sellingPrice]]
 			) 
 	
 		const paramsTwo = web3.eth.abi.encodeParameters(
 			['address[2]', 'uint256[3]'],
-			[[erc20.address, erc1155.address], [buyTokenId || tokenId, buyingPrice, buyingDenominator || 1]]
+			[[kip7.address, erc1155.address], [buyTokenId || tokenId, buyingPrice, buyingDenominator || 1]]
 			)
 
 		const one = {registry: registry.address, maker: account_a, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: (sellingNumerator || 1) * sellAmount, listingTime: '0', expirationTime: '10000000000', salt: '11'}
 		const two = {registry: registry.address, maker: account_b, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: buyingPrice*buyAmount, listingTime: '0', expirationTime: '10000000000', salt: '12'}
 
 		const firstData = erc1155c.methods.safeTransferFrom(account_a, account_b, tokenId, sellingNumerator || buyAmount, "0x").encodeABI() + ZERO_BYTES32.substr(2)
-		const secondData = erc20c.methods.transferFrom(account_b, account_a, buyAmount*buyingPrice).encodeABI()
+		const secondData = kip7c.methods.transferFrom(account_b, account_a, buyAmount*buyingPrice).encodeABI()
 		
 		const firstCall = {target: erc1155.address, howToCall: 0, data: firstData}
-		const secondCall = {target: erc20.address, howToCall: 0, data: secondData}
+		const secondCall = {target: kip7.address, howToCall: 0, data: secondData}
 
 		let sigOne = await exchange.sign(one, account_a)
 		
@@ -98,63 +95,63 @@ contract('WyvernExchange', (accounts) =>
 			two.salt++
 			}
 		
-		let [account_a_erc20_balance,account_b_erc1155_balance] = await Promise.all([erc20.balanceOf(account_a),erc1155.balanceOf(account_b, tokenId)])
-		assert.equal(account_a_erc20_balance.toString(), (sellingPrice*buyAmount*txCount)+"",'Incorrect ERC20 balance')
+		let [account_a_kip7_balance,account_b_erc1155_balance] = await Promise.all([kip7.balanceOf(account_a),erc1155.balanceOf(account_b, tokenId)])
+		assert.equal(account_a_kip7_balance.toString(), (sellingPrice*buyAmount*txCount)+"",'Incorrect ERC20 balance')
 		assert.equal(account_b_erc1155_balance.toString(), (sellingNumerator || (buyAmount*txCount))+"",'Incorrect ERC1155 balance')
 		}
 
-	it('StaticMarket: matches erc1155 <> erc20 order, 1 fill',async () =>
+	it('StaticMarket: matches erc1155 <> kip7 order, 1 fill',async () =>
 		{
 		const price = 10000
 
-		return any_erc1155_for_erc20_test({
+		return any_erc1155_for_kip7_test({
 			tokenId: 5,
 			sellAmount: 1,
 			sellingPrice: price,
 			buyingPrice: price,
 			buyAmount: 1,
 			erc1155MintAmount: 1,
-			erc20MintAmount: price,
+			kip7MintAmount: price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: matches erc1155 <> erc20 order, multiple fills in 1 transaction',async () =>
+	it('StaticMarket: matches erc1155 <> kip7 order, multiple fills in 1 transaction',async () =>
 		{
 		const amount = 3
 		const price = 10000
 
-		return any_erc1155_for_erc20_test({
+		return any_erc1155_for_kip7_test({
 			tokenId: 5,
 			sellAmount: amount,
 			sellingPrice: price,
 			buyingPrice: price,
 			buyAmount: amount,
 			erc1155MintAmount: amount,
-			erc20MintAmount: amount*price,
+			kip7MintAmount: amount*price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: matches erc1155 <> erc20 order, multiple fills in multiple transactions',async () =>
+	it('StaticMarket: matches erc1155 <> kip7 order, multiple fills in multiple transactions',async () =>
 		{
 		const nftAmount = 3
 		const buyAmount = 1
 		const price = 10000
 		const transactions = 3
 
-		return any_erc1155_for_erc20_test({
+		return any_erc1155_for_kip7_test({
 			tokenId: 5,
 			sellAmount: nftAmount,
 			sellingPrice: price,
 			buyingPrice: price,
 			buyAmount,
 			erc1155MintAmount: nftAmount,
-			erc20MintAmount: buyAmount*price*transactions,
+			kip7MintAmount: buyAmount*price*transactions,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1],
@@ -162,32 +159,32 @@ contract('WyvernExchange', (accounts) =>
 			})
 		})
 
-	it('StaticMarket: matches erc1155 <> erc20 order, allows any partial fill',async () =>
+	it('StaticMarket: matches erc1155 <> kip7 order, allows any partial fill',async () =>
 		{
 		const nftAmount = 30
 		const buyAmount = 4
 		const price = 10000
 
-		return any_erc1155_for_erc20_test({
+		return any_erc1155_for_kip7_test({
 			tokenId: 5,
 			sellAmount: nftAmount,
 			sellingPrice: price,
 			buyingPrice: price,
 			buyAmount,
 			erc1155MintAmount: nftAmount,
-			erc20MintAmount: buyAmount*price,
+			kip7MintAmount: buyAmount*price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: matches erc1155 <> erc20 order with any matching ratio',async () =>
+	it('StaticMarket: matches erc1155 <> kip7 order with any matching ratio',async () =>
 		{
 		const lot = 83974
 		const price = 972
 
-		return any_erc1155_for_erc20_test({
+		return any_erc1155_for_kip7_test({
 			tokenId: 5,
 			sellAmount: 6,
 			sellingNumerator: lot,
@@ -196,26 +193,26 @@ contract('WyvernExchange', (accounts) =>
 			buyingDenominator: lot,
 			buyAmount: 1,
 			erc1155MintAmount: lot,
-			erc20MintAmount: price,
+			kip7MintAmount: price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: does not match erc1155 <> erc20 order beyond maximum fill',async () =>
+	it('StaticMarket: does not match erc1155 <> kip7 order beyond maximum fill',async () =>
 		{
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc1155_for_erc20_test({
+			any_erc1155_for_kip7_test({
 				tokenId: 5,
 				sellAmount: 1,
 				sellingPrice: price,
 				buyingPrice: price,
 				buyAmount: 1,
 				erc1155MintAmount: 2,
-				erc20MintAmount: price*2,
+				kip7MintAmount: price*2,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1],
@@ -226,19 +223,19 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc1155 <> erc20 order with different prices',async () =>
+	it('StaticMarket: does not fill erc1155 <> kip7 order with different prices',async () =>
 		{
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc1155_for_erc20_test({
+			any_erc1155_for_kip7_test({
 				tokenId: 5,
 				sellAmount: 1,
 				sellingPrice: price,
 				buyingPrice: price-10,
 				buyAmount: 1,
 				erc1155MintAmount: 1,
-				erc20MintAmount: price,
+				kip7MintAmount: price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -248,12 +245,12 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc1155 <> erc20 order with different ratios',async () =>
+	it('StaticMarket: does not fill erc1155 <> kip7 order with different ratios',async () =>
 		{
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc1155_for_erc20_test({
+			any_erc1155_for_kip7_test({
 				tokenId: 5,
 				sellAmount: 1,
 				sellingPrice: price,
@@ -261,7 +258,7 @@ contract('WyvernExchange', (accounts) =>
 				buyingDenominator: 2,
 				buyAmount: 1,
 				erc1155MintAmount: 1,
-				erc20MintAmount: price,
+				kip7MintAmount: price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -271,21 +268,21 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc1155 <> erc20 order beyond maximum sell amount',async () =>
+	it('StaticMarket: does not fill erc1155 <> kip7 order beyond maximum sell amount',async () =>
 		{
 		const nftAmount = 2
 		const buyAmount = 3
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc1155_for_erc20_test({
+			any_erc1155_for_kip7_test({
 				tokenId: 5,
 				sellAmount: nftAmount,
 				sellingPrice: price,
 				buyingPrice: price,
 				buyAmount,
 				erc1155MintAmount: nftAmount,
-				erc20MintAmount: buyAmount*price,
+				kip7MintAmount: buyAmount*price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -295,21 +292,21 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc1155 <> erc20 order if balance is insufficient',async () =>
+	it('StaticMarket: does not fill erc1155 <> kip7 order if balance is insufficient',async () =>
 		{
 		const nftAmount = 1
 		const buyAmount = 1
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc1155_for_erc20_test({
+			any_erc1155_for_kip7_test({
 				tokenId: 5,
 				sellAmount: nftAmount,
 				sellingPrice: price,
 				buyingPrice: price,
 				buyAmount,
 				erc1155MintAmount: nftAmount,
-				erc20MintAmount: buyAmount*price-1,
+				kip7MintAmount: buyAmount*price-1,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -319,12 +316,12 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc1155 <> erc20 order if the token IDs are different',async () =>
+	it('StaticMarket: does not fill erc1155 <> kip7 order if the token IDs are different',async () =>
 		{
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc1155_for_erc20_test({
+			any_erc1155_for_kip7_test({
 				tokenId: 5,
 				buyTokenId: 6,
 				sellAmount: 1,
@@ -332,7 +329,7 @@ contract('WyvernExchange', (accounts) =>
 				buyingPrice: price,
 				buyAmount: 1,
 				erc1155MintAmount: 1,
-				erc20MintAmount: price,
+				kip7MintAmount: price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1],
@@ -342,15 +339,15 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	const any_erc20_for_erc20_test = async (options) =>
+	const any_kip7_for_kip7_test = async (options) =>
 		{
 		const {sellAmount,
 			sellingPrice,
 			buyingPrice,
 			buyPriceOffset,
 			buyAmount,
-			erc20MintAmountSeller,
-			erc20MintAmountBuyer,
+			kip7MintAmountSeller,
+			kip7MintAmountBuyer,
 			account_a,
 			account_b,
 			sender,
@@ -360,7 +357,7 @@ contract('WyvernExchange', (accounts) =>
 		const takerPriceOffset = buyPriceOffset || 0
 		
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc20Seller,erc20Buyer] = await deploy([TestERC20,TestERC20])
+		let [kip7Seller,kip7Buyer] = await deploy([TestKIP7,TestKIP7])
 		
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
@@ -370,30 +367,30 @@ contract('WyvernExchange', (accounts) =>
 		let proxy2 = await registry.proxies(account_b)
 		assert.equal(true, proxy2.length > 0, 'no proxy address for account b')
 		
-		await Promise.all([erc20Seller.approve(proxy1,erc20MintAmountSeller,{from: account_a}),erc20Buyer.approve(proxy2,erc20MintAmountBuyer,{from: account_b})])
-		await Promise.all([erc20Seller.mint(account_a,erc20MintAmountSeller),erc20Buyer.mint(account_b,erc20MintAmountBuyer)])
+		await Promise.all([kip7Seller.approve(proxy1,kip7MintAmountSeller,{from: account_a}),kip7Buyer.approve(proxy2,kip7MintAmountBuyer,{from: account_b})])
+		await Promise.all([kip7Seller.mint(account_a,kip7MintAmountSeller),kip7Buyer.mint(account_b,kip7MintAmountBuyer)])
 
-		const erc20cSeller = new web3.eth.Contract(erc20Seller.abi, erc20Seller.address)
-		const erc20cBuyer = new web3.eth.Contract(erc20Buyer.abi, erc20Buyer.address)
+		const kip7cSeller = new web3.eth.Contract(kip7Seller.abi, kip7Seller.address)
+		const kip7cBuyer = new web3.eth.Contract(kip7Buyer.abi, kip7Buyer.address)
 		const selector = web3.eth.abi.encodeFunctionSignature('anyERC20ForERC20(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
 			
 		const paramsOne = web3.eth.abi.encodeParameters(
 			['address[2]', 'uint256[2]'],
-			[[erc20Seller.address, erc20Buyer.address], [sellingPrice, buyingPrice]]
+			[[kip7Seller.address, kip7Buyer.address], [sellingPrice, buyingPrice]]
 			) 
 	
 		const paramsTwo = web3.eth.abi.encodeParameters(
 			['address[2]', 'uint256[2]'],
-			[[erc20Buyer.address, erc20Seller.address], [buyingPrice + takerPriceOffset, sellingPrice]]
+			[[kip7Buyer.address, kip7Seller.address], [buyingPrice + takerPriceOffset, sellingPrice]]
 			)
 		const one = {registry: registry.address, maker: account_a, staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsOne, maximumFill: sellAmount, listingTime: '0', expirationTime: '10000000000', salt: '11'}
 		const two = {registry: registry.address, maker: account_b, staticTarget: statici.address, staticSelector: selector, staticExtradata: paramsTwo, maximumFill: txCount*sellingPrice*buyAmount, listingTime: '0', expirationTime: '10000000000', salt: '12'}
 
-		const firstData = erc20cSeller.methods.transferFrom(account_a, account_b, buyAmount).encodeABI()
-		const secondData = erc20cBuyer.methods.transferFrom(account_b, account_a, buyAmount * sellingPrice).encodeABI()
+		const firstData = kip7cSeller.methods.transferFrom(account_a, account_b, buyAmount).encodeABI()
+		const secondData = kip7cBuyer.methods.transferFrom(account_b, account_a, buyAmount * sellingPrice).encodeABI()
 		
-		const firstCall = {target: erc20Seller.address, howToCall: 0, data: firstData}
-		const secondCall = {target: erc20Buyer.address, howToCall: 0, data: secondData}
+		const firstCall = {target: kip7Seller.address, howToCall: 0, data: firstData}
+		const secondCall = {target: kip7Buyer.address, howToCall: 0, data: secondData}
 
 		let sigOne = await exchange.sign(one, account_a)
 		
@@ -404,60 +401,60 @@ contract('WyvernExchange', (accounts) =>
 			two.salt++
 			}
 		
-		let [account_a_erc20_balance,account_b_erc20_balance] = await Promise.all([erc20Buyer.balanceOf(account_a),erc20Seller.balanceOf(account_b)])
-		assert.equal(account_a_erc20_balance.toNumber(), sellingPrice*buyAmount*txCount,'Incorrect ERC20 balance')
-		assert.equal(account_b_erc20_balance.toNumber(), buyAmount*txCount,'Incorrect ERC20 balance')
+		let [account_a_kip7_balance,account_b_kip7_balance] = await Promise.all([kip7Buyer.balanceOf(account_a),kip7Seller.balanceOf(account_b)])
+		assert.equal(account_a_kip7_balance.toNumber(), sellingPrice*buyAmount*txCount,'Incorrect ERC20 balance')
+		assert.equal(account_b_kip7_balance.toNumber(), buyAmount*txCount,'Incorrect ERC20 balance')
 		}
 
-	it('StaticMarket: matches erc20 <> erc20 order, 1 fill',async () =>
+	it('StaticMarket: matches kip7 <> kip7 order, 1 fill',async () =>
 		{
 		const price = 10000
 
-		return any_erc20_for_erc20_test({
+		return any_kip7_for_kip7_test({
 			sellAmount: 1,
 			sellingPrice: price,
 			buyingPrice: 1,
 			buyAmount: 1,
-			erc20MintAmountSeller: 1,
-			erc20MintAmountBuyer: price,
+			kip7MintAmountSeller: 1,
+			kip7MintAmountBuyer: price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: matches erc20 <> erc20 order, multiple fills in 1 transaction',async () =>
+	it('StaticMarket: matches kip7 <> kip7 order, multiple fills in 1 transaction',async () =>
 		{
 		const amount = 3
 		const price = 10000
 
-		return any_erc20_for_erc20_test({
+		return any_kip7_for_kip7_test({
 			sellAmount: amount,
 			sellingPrice: price,
 			buyingPrice: 1,
 			buyAmount: amount,
-			erc20MintAmountSeller: amount,
-			erc20MintAmountBuyer: amount*price,
+			kip7MintAmountSeller: amount,
+			kip7MintAmountBuyer: amount*price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: matches erc20 <> erc20 order, multiple fills in multiple transactions',async () =>
+	it('StaticMarket: matches kip7 <> kip7 order, multiple fills in multiple transactions',async () =>
 		{
 		const sellAmount = 3
 		const buyAmount = 1
 		const price = 10000
 		const transactions = 3
 
-		return any_erc20_for_erc20_test({
+		return any_kip7_for_kip7_test({
 			sellAmount,
 			sellingPrice: price,
 			buyingPrice: 1,
 			buyAmount,
-			erc20MintAmountSeller: sellAmount,
-			erc20MintAmountBuyer: buyAmount*price*transactions,
+			kip7MintAmountSeller: sellAmount,
+			kip7MintAmountBuyer: buyAmount*price*transactions,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1],
@@ -465,37 +462,37 @@ contract('WyvernExchange', (accounts) =>
 			})
 		})
 
-	it('StaticMarket: matches erc20 <> erc20 order, allows any partial fill',async () =>
+	it('StaticMarket: matches kip7 <> kip7 order, allows any partial fill',async () =>
 		{
 		const sellAmount = 30
 		const buyAmount = 4
 		const price = 10000
 
-		return any_erc20_for_erc20_test({
+		return any_kip7_for_kip7_test({
 			sellAmount,
 			sellingPrice: price,
 			buyingPrice: 1,
 			buyAmount,
-			erc20MintAmountSeller: sellAmount,
-			erc20MintAmountBuyer: buyAmount*price,
+			kip7MintAmountSeller: sellAmount,
+			kip7MintAmountBuyer: buyAmount*price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: does not match erc20 <> erc20 order beyond maximum fill',async () =>
+	it('StaticMarket: does not match kip7 <> kip7 order beyond maximum fill',async () =>
 		{
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc20_for_erc20_test({
+			any_kip7_for_kip7_test({
 				sellAmount: 1,
 				sellingPrice: price,
 				buyingPrice: 1,
 				buyAmount: 1,
-				erc20MintAmountSeller: 2,
-				erc20MintAmountBuyer: price*2,
+				kip7MintAmountSeller: 2,
+				kip7MintAmountBuyer: price*2,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1],
@@ -506,19 +503,19 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc20 <> erc20 order with different taker price',async () =>
+	it('StaticMarket: does not fill kip7 <> kip7 order with different taker price',async () =>
 		{
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc20_for_erc20_test({
+			any_kip7_for_kip7_test({
 				sellAmount: 1,
 				sellingPrice: price,
 				buyingPrice: 1,
 				buyPriceOffset: 1,
 				buyAmount: 1,
-				erc20MintAmountSeller: 2,
-				erc20MintAmountBuyer: price,
+				kip7MintAmountSeller: 2,
+				kip7MintAmountBuyer: price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -528,20 +525,20 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc20 <> erc20 order beyond maximum sell amount',async () =>
+	it('StaticMarket: does not fill kip7 <> kip7 order beyond maximum sell amount',async () =>
 		{
 		const sellAmount = 2
 		const buyAmount = 3
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc20_for_erc20_test({
+			any_kip7_for_kip7_test({
 				sellAmount,
 				sellingPrice: price,
 				buyingPrice: 1,
 				buyAmount,
-				erc20MintAmountSeller: sellAmount,
-				erc20MintAmountBuyer: buyAmount*price,
+				kip7MintAmountSeller: sellAmount,
+				kip7MintAmountBuyer: buyAmount*price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -551,20 +548,20 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc20 <> erc20 order if balance is insufficient',async () =>
+	it('StaticMarket: does not fill kip7 <> kip7 order if balance is insufficient',async () =>
 		{
 		const sellAmount = 1
 		const buyAmount = 1
 		const price = 10000
 
 		return assertIsRejected(
-			any_erc20_for_erc20_test({
+			any_kip7_for_kip7_test({
 				sellAmount,
 				sellingPrice: price,
 				buyingPrice: 1,
 				buyAmount,
-				erc20MintAmountSeller: sellAmount,
-				erc20MintAmountBuyer: buyAmount*price-1,
+				kip7MintAmountSeller: sellAmount,
+				kip7MintAmountBuyer: buyAmount*price-1,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -574,20 +571,20 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	const erc721_for_erc20_test = async (options) =>
+	const kip17_for_kip7_test = async (options) =>
 		{
 		const {
 			tokenId,
 			buyTokenId,
 			sellingPrice,
 			buyingPrice,
-			erc20MintAmount,
+			kip7MintAmount,
 			account_a,
 			account_b,
 			sender} = options
 
 		let {exchange, registry, statici} = await deploy_core_contracts()
-		let [erc721,erc20] = await deploy([TestERC721,TestERC20])
+		let [kip17,kip7] = await deploy([TestKIP17,TestKIP7])
 		
 		await registry.registerProxy({from: account_a})
 		let proxy1 = await registry.proxies(account_a)
@@ -597,69 +594,69 @@ contract('WyvernExchange', (accounts) =>
 		let proxy2 = await registry.proxies(account_b)
 		assert.equal(true, proxy2.length > 0, 'no proxy address for account b')
 		
-		await Promise.all([erc721.setApprovalForAll(proxy1,true,{from: account_a}),erc20.approve(proxy2,erc20MintAmount,{from: account_b})])
-		await Promise.all([erc721.mint(account_a,tokenId),erc20.mint(account_b,erc20MintAmount)])
+		await Promise.all([kip17.setApprovalForAll(proxy1,true,{from: account_a}),kip7.approve(proxy2,kip7MintAmount,{from: account_b})])
+		await Promise.all([kip17.mint(account_a,tokenId),kip7.mint(account_b,kip7MintAmount)])
 
 		if (buyTokenId)
-			await erc721.mint(account_a,buyTokenId)
+			await kip17.mint(account_a,buyTokenId)
 
-		const erc721c = new web3.eth.Contract(erc721.abi, erc721.address)
-		const erc20c = new web3.eth.Contract(erc20.abi, erc20.address)
+		const kip17c = new web3.eth.Contract(kip17.abi, kip17.address)
+		const kip7c = new web3.eth.Contract(kip7.abi, kip7.address)
 		const selectorOne = web3.eth.abi.encodeFunctionSignature('ERC721ForERC20(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
 		const selectorTwo = web3.eth.abi.encodeFunctionSignature('ERC20ForERC721(bytes,address[7],uint8[2],uint256[6],bytes,bytes)')
 			
 		const paramsOne = web3.eth.abi.encodeParameters(
 			['address[2]', 'uint256[2]'],
-			[[erc721.address, erc20.address], [tokenId, sellingPrice]]
+			[[kip17.address, kip7.address], [tokenId, sellingPrice]]
 			) 
 	
 		const paramsTwo = web3.eth.abi.encodeParameters(
 			['address[2]', 'uint256[2]'],
-			[[erc20.address, erc721.address], [buyTokenId || tokenId, buyingPrice]]
+			[[kip7.address, kip17.address], [buyTokenId || tokenId, buyingPrice]]
 			)
 		const one = {registry: registry.address, maker: account_a, staticTarget: statici.address, staticSelector: selectorOne, staticExtradata: paramsOne, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '11'}
 		const two = {registry: registry.address, maker: account_b, staticTarget: statici.address, staticSelector: selectorTwo, staticExtradata: paramsTwo, maximumFill: 1, listingTime: '0', expirationTime: '10000000000', salt: '12'}
 
-		const firstData = erc721c.methods.transferFrom(account_a, account_b, tokenId).encodeABI()
-		const secondData = erc20c.methods.transferFrom(account_b, account_a, buyingPrice).encodeABI()
+		const firstData = kip17c.methods.transferFrom(account_a, account_b, tokenId).encodeABI()
+		const secondData = kip7c.methods.transferFrom(account_b, account_a, buyingPrice).encodeABI()
 		
-		const firstCall = {target: erc721.address, howToCall: 0, data: firstData}
-		const secondCall = {target: erc20.address, howToCall: 0, data: secondData}
+		const firstCall = {target: kip17.address, howToCall: 0, data: firstData}
+		const secondCall = {target: kip7.address, howToCall: 0, data: secondData}
 
 		let sigOne = await exchange.sign(one, account_a)
 		let sigTwo = await exchange.sign(two, account_b)
 		await exchange.atomicMatchWith(one, sigOne, firstCall, two, sigTwo, secondCall, ZERO_BYTES32,{from: sender || account_a})
 		
-		let [account_a_erc20_balance,token_owner] = await Promise.all([erc20.balanceOf(account_a),erc721.ownerOf(tokenId)])
-		assert.equal(account_a_erc20_balance.toNumber(), sellingPrice,'Incorrect ERC20 balance')
+		let [account_a_kip7_balance,token_owner] = await Promise.all([kip7.balanceOf(account_a),kip17.ownerOf(tokenId)])
+		assert.equal(account_a_kip7_balance.toNumber(), sellingPrice,'Incorrect ERC20 balance')
 		assert.equal(token_owner, account_b,'Incorrect token owner')
 		}
 
-	it('StaticMarket: matches erc721 <> erc20 order',async () =>
+	it('StaticMarket: matches kip17 <> kip7 order',async () =>
 		{
 		const price = 15000
 
-		return erc721_for_erc20_test({
+		return kip17_for_kip7_test({
 			tokenId: 10,
 			sellingPrice: price,
 			buyingPrice: price,
-			erc20MintAmount: price,
+			kip7MintAmount: price,
 			account_a: accounts[0],
 			account_b: accounts[6],
 			sender: accounts[1]
 			})
 		})
 
-	it('StaticMarket: does not fill erc721 <> erc20 order with different prices',async () =>
+	it('StaticMarket: does not fill kip17 <> kip7 order with different prices',async () =>
 		{
 		const price = 15000
 
 		return assertIsRejected(
-			erc721_for_erc20_test({
+			kip17_for_kip7_test({
 				tokenId: 10,
 				sellingPrice: price,
 				buyingPrice: price-1,
-				erc20MintAmount: price,
+				kip7MintAmount: price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -669,16 +666,16 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc721 <> erc20 order if the balance is insufficient',async () =>
+	it('StaticMarket: does not fill kip17 <> kip7 order if the balance is insufficient',async () =>
 		{
 		const price = 15000
 
 		return assertIsRejected(
-			erc721_for_erc20_test({
+			kip17_for_kip7_test({
 				tokenId: 10,
 				sellingPrice: price,
 				buyingPrice: price,
-				erc20MintAmount: price-1,
+				kip7MintAmount: price-1,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
@@ -688,17 +685,17 @@ contract('WyvernExchange', (accounts) =>
 			)
 		})
 
-	it('StaticMarket: does not fill erc721 <> erc20 order if the token IDs are different',async () =>
+	it('StaticMarket: does not fill kip17 <> kip7 order if the token IDs are different',async () =>
 		{
 		const price = 15000
 
 		return assertIsRejected(
-			erc721_for_erc20_test({
+			kip17_for_kip7_test({
 				tokenId: 10,
 				buyTokenId: 11,
 				sellingPrice: price,
 				buyingPrice: price,
-				erc20MintAmount: price,
+				kip7MintAmount: price,
 				account_a: accounts[0],
 				account_b: accounts[6],
 				sender: accounts[1]
